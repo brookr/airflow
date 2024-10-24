@@ -5,6 +5,8 @@ import {
   text,
   timestamp,
   integer,
+  boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations, InferSelect } from "drizzle-orm";
 
@@ -170,3 +172,12 @@ export enum ActivityType {
   CREATE_WEBFLOW_CONNECTION = 'CREATE_WEBFLOW_CONNECTION',
   REMOVE_WEBFLOW_CONNECTION = 'REMOVE_WEBFLOW_CONNECTION',
 }
+
+export const webflowItems = pgTable("webflow_items", {
+  _id: serial("id").primaryKey(),
+  collectionId: integer("collection_id").notNull(),
+  name: text("name").notNull(),
+  createdOn: timestamp("created_on").defaultNow(),
+  isDraft: boolean("is_draft").default(false),
+  fieldData: jsonb("field_data").notNull(),
+});

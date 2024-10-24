@@ -7,6 +7,7 @@ import {
   users,
   webflowConnections,
   User,
+  webflowItems,
 } from "./schema";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth/session";
@@ -164,3 +165,85 @@ export const removeWebflowConnection = (connectionId: number) => {
     .delete(webflowConnections)
     .where(eq(webflowConnections.id, connectionId));
 };
+
+export async function getCollectionItems(collectionId: string, filterDraft: string, sortOrder: string) {
+  let query = db.select().from('items').where('collectionId', collectionId);
+  if (filterDraft !== '') {
+    query = query.and('isDraft', filterDraft === 'true');
+  }
+  query = query.orderBy('createdOn', sortOrder === 'asc' ? 'asc' : 'desc');
+  return await query;
+}
+
+export async function updateItem(
+  collectionId: string,
+  itemId: string,
+  data: Partial<CollectionItem>
+) {
+  return db
+    .update(webflowItems)
+    .set({
+      name: data.fieldData.name,
+      isDraft: data.isDraft,
+      fieldData: data.fieldData,
+    })
+    .where(
+      and(
+        eq(webflowItems.collectionId, collectionId),
+        eq(webflowItems._id, itemId)
+      )
+    );
+}
+
+export async function getWebflowConnectionByCollectionId(collectionId: string) {
+  const connections = await db
+    .select()
+    .from(webflowConnections)
+    .where(eq(webflowConnections.collectionId, collectionId));
+  
+  return connections.length > 0 ? connections[0] : null;
+}
+
+export async function getWebflowItem(collectionId: string, itemId: string) {
+  const connection = await getWebflowConnectionByCollectionId(collectionId);
+  if (!connection) {
+    throw new Error('Webflow connection not found');
+  }
+
+  const response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/${itemId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${connection.webflowToken}`,
+      'accept-version': '1.0.0',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch item from Webflow');
+  }
+
+  return await response.json();
+}
+
+export async function updateWebflowItem(collectionId: string, itemId: string, data: any) {
+  const connection = await getWebflowConnectionByCollectionId(collectionId);
+  if (!connection) {
+    throw new Error('Webflow connection not found');
+  }
+
+  const response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/${itemId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${connection.webflowToken}`,
+      'Content-Type': 'application/json',
+      'accept-version': '1.0.0',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update item in Webflow');
+  }
+
+  return await response.json();
+}
