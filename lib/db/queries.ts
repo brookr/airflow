@@ -1,11 +1,18 @@
-import { desc, and, eq, isNull } from 'drizzle-orm';
-import { db } from './drizzle';
-import { activityLogs, teamMembers, teams, users } from './schema';
-import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth/session';
+import { desc, and, eq, isNull } from "drizzle-orm";
+import { db } from "./drizzle";
+import {
+  activityLogs,
+  teamMembers,
+  teams,
+  users,
+  webflowConnections,
+  User,
+} from "./schema";
+import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth/session";
 
 export async function getUser() {
-  const sessionCookie = (await cookies()).get('session');
+  const sessionCookie = (await cookies()).get("session");
   if (!sessionCookie || !sessionCookie.value) {
     return null;
   }
@@ -14,7 +21,7 @@ export async function getUser() {
   if (
     !sessionData ||
     !sessionData.user ||
-    typeof sessionData.user.id !== 'number'
+    typeof sessionData.user.id !== "number"
   ) {
     return null;
   }
@@ -24,8 +31,12 @@ export async function getUser() {
   }
 
   const user = await db
-    .select()
+    .select({
+      ...users,
+      teamId: teamMembers.teamId,
+    })
     .from(users)
+    .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
     .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
     .limit(1);
 
@@ -33,7 +44,7 @@ export async function getUser() {
     return null;
   }
 
-  return user[0];
+  return user[0] as User;
 }
 
 export async function getTeamByStripeCustomerId(customerId: string) {
@@ -67,7 +78,7 @@ export async function updateTeamSubscription(
 export async function getUserWithTeam(userId: number) {
   const result = await db
     .select({
-      user: users,
+      ...users,
       teamId: teamMembers.teamId,
     })
     .from(users)
@@ -81,7 +92,7 @@ export async function getUserWithTeam(userId: number) {
 export async function getActivityLogs() {
   const user = await getUser();
   if (!user) {
-    throw new Error('User not authenticated');
+    throw new Error("User not authenticated");
   }
 
   return await db
@@ -107,6 +118,7 @@ export async function getTeamForUser(userId: number) {
         with: {
           team: {
             with: {
+              webflowConnections: true,
               teamMembers: {
                 with: {
                   user: {
@@ -127,3 +139,28 @@ export async function getTeamForUser(userId: number) {
 
   return result?.teamMembers[0]?.team || null;
 }
+
+export const getWebflowConnectionsByTeam = (teamId: number) => {
+  return db
+    .select()
+    .from(webflowConnections)
+    .where(eq(webflowConnections.teamId, teamId));
+};
+
+export const addWebflowConnection = (
+  teamId: number,
+  webflowToken: string,
+  collectionId: string
+) => {
+  return db.insert(webflowConnections).values({
+    teamId,
+    webflowToken,
+    collectionId,
+  });
+};
+
+export const removeWebflowConnection = (connectionId: number) => {
+  return db
+    .delete(webflowConnections)
+    .where(eq(webflowConnections.id, connectionId));
+};

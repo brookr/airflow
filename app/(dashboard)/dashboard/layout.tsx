@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Users, Settings, Shield, Activity, Menu } from 'lucide-react';
+import { Users, Settings, Activity, Menu, Database } from 'lucide-react';
+import { useUser } from "@/lib/auth";
 
 export default function DashboardLayout({
   children,
@@ -13,12 +14,36 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [collections, setCollections] = useState<{ collectionId: string; collectionName: string }[]>([]);
+  const { user } = useUser();
+
+  const teamId = user?.teamId;
+
+  useEffect(() => {
+    if (!teamId) return;
+
+    const fetchCollections = async () => {
+      try {
+        const response = await fetch(`/api/webflow/connections?teamId=${teamId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setCollections(data.connections);
+        } else {
+          console.error('Failed to fetch collections:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error fetching collections:', error);
+      }
+    };
+
+    fetchCollections();
+  }, [teamId]);
 
   const navItems = [
     { href: '/dashboard', icon: Users, label: 'Team' },
     { href: '/dashboard/general', icon: Settings, label: 'General' },
     { href: '/dashboard/activity', icon: Activity, label: 'Activity' },
-    { href: '/dashboard/security', icon: Shield, label: 'Security' },
+    { href: '/dashboard/webflow-collection', icon: Database, label: 'Webflow Collection', isParent: true },
   ];
 
   return (
@@ -49,18 +74,33 @@ export default function DashboardLayout({
         >
           <nav className="h-full overflow-y-auto p-4">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href} passHref>
-                <Button
-                  variant={pathname === item.href ? 'secondary' : 'ghost'}
-                  className={`my-1 w-full justify-start ${
-                    pathname === item.href ? 'bg-gray-100' : ''
-                  }`}
-                  onClick={() => setIsSidebarOpen(false)}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.label}
-                </Button>
-              </Link>
+              <div key={item.href}>
+                <Link href={item.href} passHref>
+                  <Button
+                    variant={pathname === item.href ? 'secondary' : 'ghost'}
+                    className={`my-1 w-full justify-start ${
+                      pathname === item.href ? 'bg-gray-100' : ''
+                    }`}
+                    onClick={() => setIsSidebarOpen(false)}
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.label}
+                  </Button>
+                </Link>
+                {item.isParent && collections?.length > 0 && (
+                  <ul className="ml-4 mt-2">
+                    {collections.map((collection) => (
+                      <li key={collection.collectionId} className="mb-1">
+                        <Link href={`/dashboard/webflow-collection/${collection.collectionId}`} passHref>
+                          <Button variant="ghost" className="w-full justify-start">
+                            {collection.collectionName}
+                          </Button>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             ))}
           </nav>
         </aside>

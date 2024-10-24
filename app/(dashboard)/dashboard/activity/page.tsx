@@ -9,6 +9,8 @@ import {
   UserMinus,
   Mail,
   CheckCircle,
+  Link,
+  Unlink,
   type LucideIcon,
 } from 'lucide-react';
 import { ActivityType } from '@/lib/db/schema';
@@ -25,6 +27,8 @@ const iconMap: Record<ActivityType, LucideIcon> = {
   [ActivityType.REMOVE_TEAM_MEMBER]: UserMinus,
   [ActivityType.INVITE_TEAM_MEMBER]: Mail,
   [ActivityType.ACCEPT_INVITATION]: CheckCircle,
+  [ActivityType.CREATE_WEBFLOW_CONNECTION]: Link,
+  [ActivityType.REMOVE_WEBFLOW_CONNECTION]: Unlink,
 };
 
 function getRelativeTime(date: Date) {
@@ -63,6 +67,10 @@ function formatAction(action: ActivityType): string {
       return 'You invited a team member';
     case ActivityType.ACCEPT_INVITATION:
       return 'You accepted an invitation';
+    case ActivityType.CREATE_WEBFLOW_CONNECTION:
+      return 'You created a Webflow connection';
+    case ActivityType.REMOVE_WEBFLOW_CONNECTION:
+      return 'You removed a Webflow connection';
     default:
       return 'Unknown action occurred';
   }
