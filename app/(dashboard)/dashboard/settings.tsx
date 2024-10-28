@@ -36,6 +36,7 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
   const [collectionId, setCollectionId] = useState("");
   const [connections, setConnections] = useState<WebflowConnection[]>([]);
   const teamId = teamData.id;
+  const [connectionName, setConnectionName] = useState("");
 
   useEffect(() => {
     const fetchConnections = async () => {
@@ -54,10 +55,12 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
       teamId,
       webflowToken,
       collectionId,
+      name: connectionName,
     });
     if (result.success) {
       setWebflowToken("");
       setCollectionId("");
+      setConnectionName("");
       const response = await fetch(`/api/webflow/connections?teamId=${teamId}`);
       const data = await response.json();
       setConnections(data.connections);
@@ -116,6 +119,14 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
           >
             <Input
               type="text"
+              value={connectionName}
+              onChange={(e) => setConnectionName(e.target.value)}
+              placeholder="Connection Name"
+              required
+              className="flex-1"
+            />
+            <Input
+              type="text"
               value={webflowToken}
               onChange={(e) => setWebflowToken(e.target.value)}
               placeholder="Webflow Token"
@@ -137,23 +148,25 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
 
           <h3 className="text-lg font-semibold mb-2">Existing Connections</h3>
           <ul>
-            {connections ? connections.map((conn) => (
-              <li
-                key={conn.id}
-                className="flex justify-between items-center mb-2"
-              >
-                <span>Webflow Token: ****{conn.webflowToken.slice(-4)}</span>
-                <span>Collection ID: {conn.collectionId}</span>
-                <Button
-                  onClick={() => handleRemoveConnection(conn.id)}
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
-                  size="sm"
+            {connections ? (
+              connections.map((conn) => (
+                <li
+                  key={conn.id}
+                  className="flex justify-between items-center mb-2"
                 >
-                  Remove
-                </Button>
+                  <span>{conn.name}</span>
+                  <span>****{conn.webflowToken.slice(-4)}</span>
+                  <span>{conn.collectionId}</span>
+                  <Button
+                    onClick={() => handleRemoveConnection(conn.id)}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    size="sm"
+                  >
+                    Remove
+                  </Button>
                 </li>
               ))
-            : (
+            ) : (
               <p>No connections found</p>
             )}
           </ul>
@@ -176,7 +189,7 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
                     <AvatarFallback>
                       {getUserDisplayName(member.user)
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: string[]) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>

@@ -7,7 +7,7 @@ import Item from "../Item";
 import { useParams } from "next/navigation";
 
 type CollectionItem = {
-  _id: string;
+  id: string;
   fieldData: {
     name: string;
   };
@@ -113,8 +113,8 @@ export default function WebflowCollectionPage() {
               </thead>
               <tbody>
                 {filteredItems.map((item) => (
-                  <tr key={item._id} className="group">
-                    <Item item={item} collectionId={collectionId} />
+                  <tr key={item.id} className="group">
+                    <Item item={item} collectionId={collectionId as string} />
                   </tr>
                 ))}
               </tbody>

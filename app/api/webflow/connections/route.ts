@@ -3,8 +3,13 @@ import { addWebflowConnection, getWebflowConnectionsByTeam, getUser } from '@/li
 
 // POST method to add connection
 export async function POST(req: NextRequest) {
-  const { teamId, webflowToken, collectionId } = await req.json();
-  await addWebflowConnection(teamId, webflowToken, collectionId);
+  const { teamId, webflowToken, collectionId, name } = await req.json();
+  
+  if (!name) {
+    return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+  }
+  
+  await addWebflowConnection(teamId, webflowToken, collectionId, name);
   return NextResponse.json({ success: 'Webflow integration added successfully.' });
 }
 

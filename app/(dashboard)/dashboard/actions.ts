@@ -1,4 +1,8 @@
-export const addWebflowConnectionAction = async (data: { teamId: number; webflowToken: string; collectionId: string }) => {
+'use client';
+
+import { emitWebflowConnectionAdded, emitWebflowConnectionRemoved } from './events';
+
+export const addWebflowConnectionAction = async (data: { teamId: number; webflowToken: string; collectionId: string; name: string }) => {
   const response = await fetch('/api/webflow/connections', {
     method: 'POST',
     headers: {
@@ -7,7 +11,13 @@ export const addWebflowConnectionAction = async (data: { teamId: number; webflow
     body: JSON.stringify(data)
   });
   
-  return response.json();
+  const result = await response.json();
+  
+  if (response.ok) {
+    emitWebflowConnectionAdded();
+  }
+  
+  return result;
 };
 
 export const removeWebflowConnectionAction = async (connectionId: number) => {
@@ -15,5 +25,11 @@ export const removeWebflowConnectionAction = async (connectionId: number) => {
     method: 'DELETE',
   });
   
-  return response.json();
+  const result = await response.json();
+  
+  if (response.ok) {
+    emitWebflowConnectionRemoved();
+  }
+  
+  return result;
 };

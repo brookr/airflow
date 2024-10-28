@@ -2,7 +2,7 @@ import React from 'react';
 import { Edit } from 'lucide-react';
 
 type CollectionItem = {
-  _id: string;
+  id: string;
   fieldData: {
     name: string;
   };
@@ -15,7 +15,7 @@ export default function Item({ item, collectionId }: { item: CollectionItem; col
     <>
       <td className="border px-4 py-2 flex justify-between items-center">
         {item.fieldData.name}
-        <a href={`/dashboard/webflow-collection/${collectionId}/items/${item._id}/edit`} className="opacity-0 group-hover:opacity-90">
+        <a href={`/dashboard/webflow-collection/${collectionId}/items/${item.id}/edit`} className="opacity-0 group-hover:opacity-90">
           <Edit />
         </a>
       </td>

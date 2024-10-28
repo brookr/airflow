@@ -151,12 +151,14 @@ export const getWebflowConnectionsByTeam = (teamId: number) => {
 export const addWebflowConnection = (
   teamId: number,
   webflowToken: string,
-  collectionId: string
+  collectionId: string,
+  name: string
 ) => {
   return db.insert(webflowConnections).values({
     teamId,
     webflowToken,
     collectionId,
+    name,
   });
 };
 

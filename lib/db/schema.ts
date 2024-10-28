@@ -73,10 +73,11 @@ export const invitations = pgTable("invitations", {
 export const webflowConnections = pgTable("webflow_connections", {
   id: serial("id").primaryKey(),
   teamId: integer("team_id")
-    .notNull()
-    .references(() => teams.id, { onDelete: "cascade" }),
+  .notNull()
+  .references(() => teams.id, { onDelete: "cascade" }),
   webflowToken: text("webflow_token").notNull(),
   collectionId: varchar("collection_id", { length: 100 }).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
