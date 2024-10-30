@@ -3,8 +3,9 @@ import { getWebflowConnectionsByTeam, getUser, getUserWithTeam, getWebflowConnec
 
 export async function GET(
   request: Request,
-  { params }: { params: { collectionId: string; itemId: string } }
+  props: { params: Promise<{ collectionId: string; itemId: string }> }
 ) {
+  const params = await props.params;
   try {
     const connection = await getWebflowConnectionByCollectionId(params.collectionId);
     if (!connection) {
@@ -100,8 +101,9 @@ export async function PUT(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { collectionId: string; itemId: string } }
+  props: { params: Promise<{ collectionId: string; itemId: string }> }
 ) {
+  const params = await props.params;
   try {
     const connection = await getWebflowConnectionByCollectionId(params.collectionId);
     if (!connection) {
