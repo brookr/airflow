@@ -16,12 +16,19 @@ interface AIFieldGeneratorProps {
     category?: string;
     tags?: string;
   };
+  customInstructions?: string;
 }
 
-export function AIFieldGenerator({ fieldName, currentValue, onGenerate, context }: AIFieldGeneratorProps) {
+export function AIFieldGenerator({ fieldName, currentValue, onGenerate, context, customInstructions }: AIFieldGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
+    if (fieldName === 'content') {
+      if (!window.confirm('Are you sure you want to regenerate the entire content? This will overwrite your existing content.')) {
+        return;
+      }
+    }
+
     setIsGenerating(true);
     try {
       const response = await fetch('/api/ai', {
@@ -42,7 +49,8 @@ export function AIFieldGenerator({ fieldName, currentValue, onGenerate, context 
             slug: context.slug,
             category: context.category,
             tags: context.tags,
-            instructions: `Generate a compelling ${fieldName} based on the article content and other metadata.`
+            format: fieldName === 'content' ? 'html' : 'text',
+            instructions: customInstructions || `Generate a compelling ${fieldName} based on the article content and other metadata.`
           }
         }),
       });
@@ -50,7 +58,11 @@ export function AIFieldGenerator({ fieldName, currentValue, onGenerate, context 
       if (!response.ok) throw new Error('Failed to generate content');
       
       const data = await response.json();
-      onGenerate(data.replacementText);
+      const processedText = fieldName === 'content' 
+        ? data.replacementText 
+        : data.replacementText.replace(/\\n/g, '\n').trim();
+      
+      onGenerate(processedText);
     } catch (error) {
       console.error('Generation failed:', error);
     } finally {

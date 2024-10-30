@@ -6,6 +6,7 @@ import { Rocket } from "lucide-react";
 import { Editor } from "@tinymce/tinymce-react";
 import { EditableField } from "@/components/ui/editable-field";
 import * as RadioGroup from "@radix-ui/react-radio-group";
+import { AIFieldGenerator } from "@/components/ui/ai-field-generator";
 
 type CollectionItem = {
   id: string;
@@ -91,7 +92,6 @@ export default function EditWebflowItemPage() {
     }
   }, [uploadStatus]);
 
-  // Move the fetch into a separate function
   const fetchItemData = async () => {
     try {
       const response = await fetch(
@@ -261,7 +261,37 @@ export default function EditWebflowItemPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="content" className="block text-sm font-medium">Content</label>
+            <div className="flex justify-between items-center">
+              <label htmlFor="content" className="block text-sm font-medium">Content</label>
+              <AIFieldGenerator
+                fieldName="content"
+                currentValue={formData.content}
+                onGenerate={(value: string) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    content: value
+                  }));
+                  setContentChanged(true);
+                }}
+                context={{
+                  content: formData.content,
+                  title: formData.name,
+                  subtitle: formData.subtitle,
+                  metaTitle: formData["meta-title-seo"],
+                  metaDescription: formData["meta-description-seo"],
+                  category: formData["choose-category"],
+                  tags: formData["tags-2"]
+                }}
+                customInstructions="Create a new article based on the context provided. You are both a crypto expert and an SEO writing expert. You are writing for a professional crypto exchange and non-custodial wallet provider, but you SHOULD NOT give investment advice or imply prices action. Avoid recommending specific products. 
+                You will write an informative and easy-to-understand article. We've already created an outline. The goal is to educate readers with varying levels of expertise, focusing on helping beginners to become more knowledgeable crypto enthusiasts. Use a clear, concise tone that balances technical details with practical explanations. The content should guide readers step-by-step when discussing actions they can take (e.g., how to trade, how to use a wallet) and provide real-world examples wherever possible.
+                Keep the language welcoming, avoid assuming prior knowledge, and anticipate common questions or concerns. The tone should be informative yet conversational, empowering readers to learn more about and participate in the crypto space.
+                Make sure the article is SEO optimized for most-likely crypto web search terms.
+                Write this article to have detailed prose, not just lists or a single sentance under headers. Use some consistent real-world analogies that would be familiar to the reader. Try to use the same or closely-related analogies throughout the article, so as not to mix too many concepts. Avoid fluff or weasle words, and don't pad the content just for length. Instead find relevant and meaty information to include, and do it according to the specified tone and voice guidance.
+                DO NOT include the title NOR subtitle in the response, we already have those. Keep the intro paragraph very short.
+                ENSURE the response is formatted with HTML tags: Use h2 for main sections, h3 for subsections, p for paragraphs, ul/li for lists.
+                "
+              />
+            </div>
             {!isEditingContent ? (
               <div 
                 ref={contentPreviewRef}
@@ -300,13 +330,14 @@ export default function EditWebflowItemPage() {
                     if (iframe.contentWindow) {
                       const height = iframe.contentWindow.document.documentElement.scrollHeight;
                       iframe.style.height = `${height}px`;
-                      setEditorHeight(height); // Set the editor height to match
+                      setEditorHeight(height);
                     }
                   }}
                 />
               </div>
             ) : (
               <Editor
+                id="content-editor"
                 apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
                 value={formData.content}
                 init={{
