@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import Item from "../Item";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 type CollectionItem = {
   id: string;
@@ -18,6 +19,7 @@ type CollectionItem = {
 export default function WebflowCollectionPage() {
   const { collectionId } = useParams();
   const { user } = useUser();
+  const router = useRouter();
 
   const [items, setItems] = useState<CollectionItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<CollectionItem[]>([]);
@@ -75,14 +77,41 @@ export default function WebflowCollectionPage() {
     setFilteredItems(result);
   }, [items, filterDraft, sortOrder]);
 
+  const handleCreateNew = async () => {
+    try {
+      const response = await fetch(`/api/webflow/collections/${collectionId}/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fieldData: {
+            name: 'New Article'
+          },
+          isDraft: true
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create new article');
+      }
+
+      const newItem = await response.json();
+      router.push(`/dashboard/webflow-collection/${collectionId}/items/${newItem.id}/edit`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create article');
+    }
+  };
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
 
   return (
     <section className="flex-1 p-4 lg:p-8">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Webflow Collection Items</CardTitle>
+          <Button onClick={handleCreateNew}>+</Button>
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex justify-between">

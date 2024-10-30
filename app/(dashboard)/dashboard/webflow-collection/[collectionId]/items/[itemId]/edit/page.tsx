@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Rocket } from "lucide-react";
 import { Editor } from "@tinymce/tinymce-react";
 import { EditableField } from "@/components/ui/editable-field";
+import * as RadioGroup from "@radix-ui/react-radio-group";
 
 type CollectionItem = {
   id: string;
@@ -469,6 +470,70 @@ export default function EditWebflowItemPage() {
 
         <aside className="w-full lg:w-80 space-y-4 bg-muted/10 p-4 rounded-lg">
           <div className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="font-semibold">Status</h3>
+              <div className="rounded-lg border p-2">
+                <RadioGroup.Root
+                  value={item?.isDraft ? "draft" : "published"}
+                  onValueChange={async (value) => {
+                    const isDraft = value === "draft";
+                    try {
+                      const response = await fetch(
+                        `/api/webflow/collections/${collectionId}/items/${itemId}`,
+                        {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            ...formData,
+                            isDraft
+                          }),
+                        }
+                      );
+                      
+                      if (!response.ok) throw new Error("Failed to update status");
+                      const updatedItem = await response.json();
+                      setItem(prev => prev ? { ...prev, isDraft } : null);
+                      
+                      setUploadStatus({
+                        type: 'success',
+                        message: `Article ${isDraft ? 'set to draft' : 'published'}`
+                      });
+                    } catch (err) {
+                      setUploadStatus({
+                        type: 'error',
+                        message: 'Failed to update status'
+                      });
+                    }
+                  }}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center">
+                    <RadioGroup.Item
+                      value="published"
+                      id="published"
+                      className="w-4 h-4 rounded-full border border-primary mr-2 data-[state=checked]:bg-primary"
+                    >
+                      <RadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:w-2 after:h-2 after:rounded-full after:bg-white" />
+                    </RadioGroup.Item>
+                    <label htmlFor="published" className="text-sm">Published</label>
+                  </div>
+                  <div className="flex items-center">
+                    <RadioGroup.Item
+                      value="draft"
+                      id="draft"
+                      className="w-4 h-4 rounded-full border border-primary mr-2 data-[state=checked]:bg-primary"
+                    >
+                      <RadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:w-2 after:h-2 after:rounded-full after:bg-white" />
+                    </RadioGroup.Item>
+                    <label htmlFor="draft" className="text-sm">Draft</label>
+                  </div>
+                </RadioGroup.Root>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Changes take effect immediately
+                </p>
+              </div>
+            </div>
+
             {/* SEO Section */}
             <div className="space-y-4">
               <h3 className="font-semibold">SEO</h3>
