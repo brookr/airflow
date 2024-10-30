@@ -8,7 +8,7 @@ import {
   boolean,
   jsonb,
 } from "drizzle-orm/pg-core";
-import { relations, InferSelect } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -73,11 +73,11 @@ export const invitations = pgTable("invitations", {
 export const webflowConnections = pgTable("webflow_connections", {
   id: serial("id").primaryKey(),
   teamId: integer("team_id")
-  .notNull()
-  .references(() => teams.id, { onDelete: "cascade" }),
+    .notNull()
+    .references(() => teams.id, { onDelete: "cascade" }),
   webflowToken: text("webflow_token").notNull(),
   collectionId: varchar("collection_id", { length: 100 }).notNull(),
-  name: varchar('name', { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -137,11 +137,16 @@ export const webflowConnectionsRelations = relations(
   })
 );
 
-export type User = InferSelect<typeof users> & {
-  teamId: number;
+export type User = typeof users.$inferSelect & { teamId: number };
+
+export type NewUser = {
+  id?: number;
+  teamId?: number;
+  email: string;
+  passwordHash: string;
+  role: string;
 };
 
-export type NewUser = typeof users.$inferInsert;
 export type Team = typeof teams.$inferSelect;
 export type NewTeam = typeof teams.$inferInsert;
 export type TeamMember = typeof teamMembers.$inferSelect;
@@ -170,8 +175,8 @@ export enum ActivityType {
   REMOVE_TEAM_MEMBER = "REMOVE_TEAM_MEMBER",
   INVITE_TEAM_MEMBER = "INVITE_TEAM_MEMBER",
   ACCEPT_INVITATION = "ACCEPT_INVITATION",
-  CREATE_WEBFLOW_CONNECTION = 'CREATE_WEBFLOW_CONNECTION',
-  REMOVE_WEBFLOW_CONNECTION = 'REMOVE_WEBFLOW_CONNECTION',
+  CREATE_WEBFLOW_CONNECTION = "CREATE_WEBFLOW_CONNECTION",
+  REMOVE_WEBFLOW_CONNECTION = "REMOVE_WEBFLOW_CONNECTION",
 }
 
 export const webflowItems = pgTable("webflow_items", {

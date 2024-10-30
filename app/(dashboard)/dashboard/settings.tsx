@@ -189,7 +189,7 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
                     <AvatarFallback>
                       {getUserDisplayName(member.user)
                         .split(" ")
-                        .map((n: string[]) => n[0])
+                        .map((n: string) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>

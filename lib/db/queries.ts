@@ -1,4 +1,4 @@
-import { desc, and, eq, isNull } from "drizzle-orm";
+import { desc, asc, and, eq, isNull } from "drizzle-orm";
 import { db } from "./drizzle";
 import {
   activityLogs,
@@ -33,7 +33,9 @@ export async function getUser() {
 
   const user = await db
     .select({
-      ...users,
+      id: users.id,
+      name: users.name,
+      email: users.email,
       teamId: teamMembers.teamId,
     })
     .from(users)
@@ -79,7 +81,9 @@ export async function updateTeamSubscription(
 export async function getUserWithTeam(userId: number) {
   const result = await db
     .select({
-      ...users,
+      id: users.id,
+      name: users.name,
+      email: users.email,
       teamId: teamMembers.teamId,
     })
     .from(users)
@@ -169,30 +173,38 @@ export const removeWebflowConnection = (connectionId: number) => {
 };
 
 export async function getCollectionItems(collectionId: string, filterDraft: string, sortOrder: string) {
-  let query = db.select().from('items').where('collectionId', collectionId);
+  const cid = Number(collectionId);
+  const conditions = [eq(webflowItems.collectionId, cid)];
+  
   if (filterDraft !== '') {
-    query = query.and('isDraft', filterDraft === 'true');
+    conditions.push(eq(webflowItems.isDraft, filterDraft === 'true'));
   }
-  query = query.orderBy('createdOn', sortOrder === 'asc' ? 'asc' : 'desc');
-  return await query;
+
+  return db
+    .select()
+    .from(webflowItems)
+    .where(and(...conditions))
+    .orderBy(sortOrder === 'asc' ? asc(webflowItems.createdOn) : desc(webflowItems.createdOn));
 }
 
 export async function updateItem(
   collectionId: string,
   itemId: string,
-  data: Partial<CollectionItem>
+  data: Partial<typeof webflowItems.$inferSelect>
 ) {
+  const cid = Number(collectionId);
+  const iid = Number(itemId);
   return db
     .update(webflowItems)
     .set({
-      name: data.fieldData.name,
+      name: data.name,
       isDraft: data.isDraft,
       fieldData: data.fieldData,
     })
     .where(
       and(
-        eq(webflowItems.collectionId, collectionId),
-        eq(webflowItems._id, itemId)
+        eq(webflowItems.collectionId, cid),
+        eq(webflowItems._id, iid)
       )
     );
 }

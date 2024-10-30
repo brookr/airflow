@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const teamIdParam = searchParams.get('teamId');
   const teamId = teamIdParam ? parseInt(teamIdParam, 10) : null;
 
-  const user = await getUser(req);
+  const user = await getUser();
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

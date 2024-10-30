@@ -3,7 +3,10 @@ import { getWebflowConnectionsByTeam, getUser, getUserWithTeam } from '@/lib/db/
 
 export async function GET(req: NextRequest, props: { params: Promise<{ collectionId: string }> }) {
   const params = await props.params;
-  const user = await getUser(req);
+  const user = await getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const userWithTeam = await getUserWithTeam(user.id);
 
   if (!userWithTeam || !userWithTeam.teamId) {

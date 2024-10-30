@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getWebflowConnectionByCollectionId } from "@/lib/db/queries";
+import { getWebflowConnectionsByTeam, getUser, getUserWithTeam, getWebflowConnectionByCollectionId, updateItem } from '@/lib/db/queries';
 
 export async function GET(
-  request: Request,
-  { params }: { params: { collectionId: string; itemId: string } }
+  request: NextRequest,
+  context: { params: { collectionId: string; itemId: string } }
 ) {
   try {
-    const connection = await getWebflowConnectionByCollectionId(params.collectionId);
+    const { collectionId, itemId } = context.params;
+    const connection = await getWebflowConnectionByCollectionId(collectionId);
     if (!connection) {
       return NextResponse.json({ error: "Connection not found" }, { status: 404 });
     }
 
     const response = await fetch(
-      `https://api.webflow.com/v2/collections/${params.collectionId}/items/${params.itemId}`,
+      `https://api.webflow.com/v2/collections/${collectionId}/items/${itemId}`,
       {
         method: "GET",
         headers: {
@@ -49,13 +50,16 @@ export async function PUT(
   const body = await request.json();
 
   const user = await getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const userWithTeam = await getUserWithTeam(user.id);
 
   if (!userWithTeam || !userWithTeam.teamId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const connections = await getWebflowConnectionsByTeam(userWithTeam.teamId);
+  const connections = await getWebflowConnectionsByTeam(userWithTeam.teamId as number);
   const connection = connections.find(
     (conn) => conn.collectionId === collectionId
   );
@@ -97,10 +101,10 @@ export async function PUT(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { collectionId: string; itemId: string } }
+  context: { params: { collectionId: string; itemId: string } }
 ) {
   try {
-    const connection = await getWebflowConnectionByCollectionId(params.collectionId);
+    const connection = await getWebflowConnectionByCollectionId(context.params.collectionId);
     if (!connection) {
       return NextResponse.json({ error: 'Connection not found' }, { status: 404 });
     }
@@ -108,7 +112,7 @@ export async function PATCH(
     const body = await req.json();
 
     const response = await fetch(
-      `https://api.webflow.com/v2/collections/${params.collectionId}/items/${params.itemId}`,
+      `https://api.webflow.com/v2/collections/${context.params.collectionId}/items/${context.params.itemId}`,
       {
         method: 'PATCH',
         headers: {
