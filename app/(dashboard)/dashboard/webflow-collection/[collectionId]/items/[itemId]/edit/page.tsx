@@ -5,10 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Rocket } from "lucide-react";
 import { Editor } from "@tinymce/tinymce-react";
 import { EditableField } from "@/components/ui/editable-field";
-<<<<<<< HEAD
 import * as RadioGroup from "@radix-ui/react-radio-group";
-=======
->>>>>>> origin/main
 
 type CollectionItem = {
   id: string;
