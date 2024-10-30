@@ -2,18 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getWebflowConnectionsByTeam, getUser, getUserWithTeam, getWebflowConnectionByCollectionId, updateItem } from '@/lib/db/queries';
 
 export async function GET(
-  request: NextRequest,
-  context: { params: { collectionId: string; itemId: string } }
+  request: Request,
+  { params }: { params: { collectionId: string; itemId: string } }
 ) {
   try {
-    const { collectionId, itemId } = context.params;
-    const connection = await getWebflowConnectionByCollectionId(collectionId);
+    const connection = await getWebflowConnectionByCollectionId(params.collectionId);
     if (!connection) {
       return NextResponse.json({ error: "Connection not found" }, { status: 404 });
     }
 
     const response = await fetch(
-      `https://api.webflow.com/v2/collections/${collectionId}/items/${itemId}`,
+      `https://api.webflow.com/v2/collections/${params.collectionId}/items/${params.itemId}`,
       {
         method: "GET",
         headers: {
@@ -101,10 +100,10 @@ export async function PUT(
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: { collectionId: string; itemId: string } }
+  { params }: { params: { collectionId: string; itemId: string } }
 ) {
   try {
-    const connection = await getWebflowConnectionByCollectionId(context.params.collectionId);
+    const connection = await getWebflowConnectionByCollectionId(params.collectionId);
     if (!connection) {
       return NextResponse.json({ error: 'Connection not found' }, { status: 404 });
     }
@@ -112,7 +111,7 @@ export async function PATCH(
     const body = await req.json();
 
     const response = await fetch(
-      `https://api.webflow.com/v2/collections/${context.params.collectionId}/items/${context.params.itemId}`,
+      `https://api.webflow.com/v2/collections/${params.collectionId}/items/${params.itemId}`,
       {
         method: 'PATCH',
         headers: {
