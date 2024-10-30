@@ -1,11 +1,19 @@
-import { desc, and, eq, isNull } from 'drizzle-orm';
-import { db } from './drizzle';
-import { activityLogs, teamMembers, teams, users } from './schema';
-import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth/session';
+import { desc, asc, and, eq, isNull } from "drizzle-orm";
+import { db } from "./drizzle";
+import {
+  activityLogs,
+  teamMembers,
+  teams,
+  users,
+  webflowConnections,
+  User,
+  webflowItems,
+} from "./schema";
+import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth/session";
 
 export async function getUser() {
-  const sessionCookie = (await cookies()).get('session');
+  const sessionCookie = (await cookies()).get("session");
   if (!sessionCookie || !sessionCookie.value) {
     return null;
   }
@@ -14,7 +22,7 @@ export async function getUser() {
   if (
     !sessionData ||
     !sessionData.user ||
-    typeof sessionData.user.id !== 'number'
+    typeof sessionData.user.id !== "number"
   ) {
     return null;
   }
@@ -24,8 +32,14 @@ export async function getUser() {
   }
 
   const user = await db
-    .select()
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      teamId: teamMembers.teamId,
+    })
     .from(users)
+    .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
     .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
     .limit(1);
 
@@ -33,7 +47,7 @@ export async function getUser() {
     return null;
   }
 
-  return user[0];
+  return user[0] as User;
 }
 
 export async function getTeamByStripeCustomerId(customerId: string) {
@@ -67,7 +81,9 @@ export async function updateTeamSubscription(
 export async function getUserWithTeam(userId: number) {
   const result = await db
     .select({
-      user: users,
+      id: users.id,
+      name: users.name,
+      email: users.email,
       teamId: teamMembers.teamId,
     })
     .from(users)
@@ -81,7 +97,7 @@ export async function getUserWithTeam(userId: number) {
 export async function getActivityLogs() {
   const user = await getUser();
   if (!user) {
-    throw new Error('User not authenticated');
+    throw new Error("User not authenticated");
   }
 
   return await db
@@ -107,6 +123,7 @@ export async function getTeamForUser(userId: number) {
         with: {
           team: {
             with: {
+              webflowConnections: true,
               teamMembers: {
                 with: {
                   user: {
@@ -126,4 +143,121 @@ export async function getTeamForUser(userId: number) {
   });
 
   return result?.teamMembers[0]?.team || null;
+}
+
+export const getWebflowConnectionsByTeam = (teamId: number) => {
+  return db
+    .select()
+    .from(webflowConnections)
+    .where(eq(webflowConnections.teamId, teamId));
+};
+
+export const addWebflowConnection = (
+  teamId: number,
+  webflowToken: string,
+  collectionId: string,
+  name: string
+) => {
+  return db.insert(webflowConnections).values({
+    teamId,
+    webflowToken,
+    collectionId,
+    name,
+  });
+};
+
+export const removeWebflowConnection = (connectionId: number) => {
+  return db
+    .delete(webflowConnections)
+    .where(eq(webflowConnections.id, connectionId));
+};
+
+export async function getCollectionItems(collectionId: string, filterDraft: string, sortOrder: string) {
+  const cid = Number(collectionId);
+  const conditions = [eq(webflowItems.collectionId, cid)];
+  
+  if (filterDraft !== '') {
+    conditions.push(eq(webflowItems.isDraft, filterDraft === 'true'));
+  }
+
+  return db
+    .select()
+    .from(webflowItems)
+    .where(and(...conditions))
+    .orderBy(sortOrder === 'asc' ? asc(webflowItems.createdOn) : desc(webflowItems.createdOn));
+}
+
+export async function updateItem(
+  collectionId: string,
+  itemId: string,
+  data: Partial<typeof webflowItems.$inferSelect>
+) {
+  const cid = Number(collectionId);
+  const iid = Number(itemId);
+  return db
+    .update(webflowItems)
+    .set({
+      name: data.name,
+      isDraft: data.isDraft,
+      fieldData: data.fieldData,
+    })
+    .where(
+      and(
+        eq(webflowItems.collectionId, cid),
+        eq(webflowItems._id, iid)
+      )
+    );
+}
+
+export async function getWebflowConnectionByCollectionId(collectionId: string) {
+  const connections = await db
+    .select()
+    .from(webflowConnections)
+    .where(eq(webflowConnections.collectionId, collectionId));
+  
+  return connections.length > 0 ? connections[0] : null;
+}
+
+export async function getWebflowItem(collectionId: string, itemId: string) {
+  const connection = await getWebflowConnectionByCollectionId(collectionId);
+  if (!connection) {
+    throw new Error('Webflow connection not found');
+  }
+
+  const response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/${itemId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${connection.webflowToken}`,
+      'accept-version': '1.0.0',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch item from Webflow');
+  }
+
+  return await response.json();
+}
+
+export async function updateWebflowItem(collectionId: string, itemId: string, data: any) {
+  const connection = await getWebflowConnectionByCollectionId(collectionId);
+  if (!connection) {
+    throw new Error('Webflow connection not found');
+  }
+
+  const response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/${itemId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${connection.webflowToken}`,
+      'Content-Type': 'application/json',
+      'accept-version': '1.0.0',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update item in Webflow');
+  }
+
+  return await response.json();
 }

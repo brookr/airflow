@@ -1,13 +1,20 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { customerPortalAction } from '@/lib/payments/actions';
-import { useActionState } from 'react';
-import { TeamDataWithMembers, User } from '@/lib/db/schema';
-import { removeTeamMember } from '@/app/(login)/actions';
-import { InviteTeamMember } from './invite-team';
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { customerPortalAction } from "@/lib/payments/actions";
+import { useActionState } from "react";
+import { TeamDataWithMembers, User, WebflowConnection } from "@/lib/db/schema";
+import { removeTeamMember } from "@/app/(login)/actions";
+import { InviteTeamMember } from "./invite-team";
+import { useUser } from "@/lib/auth";
+import {
+  addWebflowConnectionAction,
+  removeWebflowConnectionAction,
+} from "./actions";
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
 
 type ActionState = {
   error?: string;
@@ -18,10 +25,56 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
   const [removeState, removeAction, isRemovePending] = useActionState<
     ActionState,
     FormData
-  >(removeTeamMember, { error: '', success: '' });
+  >(removeTeamMember, { error: "", success: "" });
+  const { user } = useUser();
 
-  const getUserDisplayName = (user: Pick<User, 'id' | 'name' | 'email'>) => {
-    return user.name || user.email || 'Unknown User';
+  const getUserDisplayName = (user: Pick<User, "id" | "name" | "email">) => {
+    return user.name || user.email || "Unknown User";
+  };
+
+  const [webflowToken, setWebflowToken] = useState("");
+  const [collectionId, setCollectionId] = useState("");
+  const [connections, setConnections] = useState<WebflowConnection[]>([]);
+  const teamId = teamData.id;
+  const [connectionName, setConnectionName] = useState("");
+
+  useEffect(() => {
+    const fetchConnections = async () => {
+      const response = await fetch(`/api/webflow/connections?teamId=${teamId}`);
+      const data = await response.json();
+      console.log("data", data);
+      setConnections(data.connections);
+    };
+
+    fetchConnections();
+  }, [teamId]);
+
+  const handleAddConnection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = await addWebflowConnectionAction({
+      teamId,
+      webflowToken,
+      collectionId,
+      name: connectionName,
+    });
+    if (result.success) {
+      setWebflowToken("");
+      setCollectionId("");
+      setConnectionName("");
+      const response = await fetch(`/api/webflow/connections?teamId=${teamId}`);
+      const data = await response.json();
+      setConnections(data.connections);
+    }
+  };
+
+  const handleRemoveConnection = async (connectionId: number) => {
+    const result = await removeWebflowConnectionAction(connectionId);
+    if (result.success) {
+      const response = await fetch(`/api/webflow/connections?teamId=${teamId}`);
+      const data = await response.json();
+      setConnections(data.connections);
+    }
+    // Handle errors as needed
   };
 
   return (
@@ -36,14 +89,14 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
               <div className="mb-4 sm:mb-0">
                 <p className="font-medium">
-                  Current Plan: {teamData.planName || 'Free'}
+                  Current Plan: {teamData.planName || "Free"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {teamData.subscriptionStatus === 'active'
-                    ? 'Billed monthly'
-                    : teamData.subscriptionStatus === 'trialing'
-                      ? 'Trial period'
-                      : 'No active subscription'}
+                  {teamData.subscriptionStatus === "active"
+                    ? "Billed monthly"
+                    : teamData.subscriptionStatus === "trialing"
+                    ? "Trial period"
+                    : "No active subscription"}
                 </p>
               </div>
               <form action={customerPortalAction}>
@@ -53,6 +106,70 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
               </form>
             </div>
           </div>
+        </CardContent>
+      </Card>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Webflow Integrations</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={handleAddConnection}
+            className="mb-6 flex items-center space-x-4"
+          >
+            <Input
+              type="text"
+              value={connectionName}
+              onChange={(e) => setConnectionName(e.target.value)}
+              placeholder="Connection Name"
+              required
+              className="flex-1"
+            />
+            <Input
+              type="text"
+              value={webflowToken}
+              onChange={(e) => setWebflowToken(e.target.value)}
+              placeholder="Webflow Token"
+              required
+              className="flex-1"
+            />
+            <Input
+              type="text"
+              value={collectionId}
+              onChange={(e) => setCollectionId(e.target.value)}
+              placeholder="Collection ID"
+              required
+              className="flex-1"
+            />
+            <Button type="submit" variant="outline">
+              Add Connection
+            </Button>
+          </form>
+
+          <h3 className="text-lg font-semibold mb-2">Existing Connections</h3>
+          <ul>
+            {connections ? (
+              connections.map((conn) => (
+                <li
+                  key={conn.id}
+                  className="flex justify-between items-center mb-2"
+                >
+                  <span>{conn.name}</span>
+                  <span>****{conn.webflowToken.slice(-4)}</span>
+                  <span>{conn.collectionId}</span>
+                  <Button
+                    onClick={() => handleRemoveConnection(conn.id)}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    size="sm"
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))
+            ) : (
+              <p>No connections found</p>
+            )}
+          </ul>
         </CardContent>
       </Card>
       <Card className="mb-8">
@@ -71,9 +188,9 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
                     />
                     <AvatarFallback>
                       {getUserDisplayName(member.user)
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')}
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -94,7 +211,7 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
                       size="sm"
                       disabled={isRemovePending}
                     >
-                      {isRemovePending ? 'Removing...' : 'Remove'}
+                      {isRemovePending ? "Removing..." : "Remove"}
                     </Button>
                   </form>
                 ) : null}
