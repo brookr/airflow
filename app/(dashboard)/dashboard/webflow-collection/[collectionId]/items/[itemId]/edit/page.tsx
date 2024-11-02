@@ -349,13 +349,15 @@ export default function EditWebflowItemPage() {
                     'searchreplace', 'visualblocks', 'code', 'fullscreen',
                     'insertdatetime', 'media', 'table', 'help', 'wordcount', 'autoresize'
                   ].join(' '),
-                  toolbar: 'undo redo | formatselect | bold italic backcolor | bullist numlist outdent indent | removeformat | help',
-                  block_formats: 'Paragraph=p;Heading 1=h1;Heading 2=h2;Heading 3=h3;',
+                  toolbar: [
+                    'undo redo | h1 h2 h3 | bullist numlist outdent indent |',
+                    ' removeformat | help'
+                  ].join(' '),
                   branding: false,
                   sticky: true,
                   sticky_offset: 0,
                   toolbar_sticky: true,
-                  toolbar_sticky_offset: 64,
+                  toolbar_sticky_offset: 0,
                   resize: true,
                   autoresize_bottom_margin: 0,
                   autoresize_min_height: editorHeight,
@@ -370,7 +372,7 @@ export default function EditWebflowItemPage() {
                       opacity: 0.5;
                       transition: opacity 2s ease-in-out;
                     }
-                  `,  // Define the style as a class
+                  `,
                   setup: (editor) => {
                     // Register the action buttons
                     editor.ui.registry.addButton('regenerate', {
@@ -501,6 +503,39 @@ export default function EditWebflowItemPage() {
 
         <aside className="w-full lg:w-80 space-y-4 bg-muted/10 p-4 rounded-lg">
           <div className="space-y-4">
+            <button
+              type="submit"
+              disabled={isUploading}
+              className={`w-full flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md transition-colors
+                ${isUploading 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : 'hover:bg-primary/90'}`}
+            >
+              {isUploading ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Rocket className="mr-2 h-4 w-4" />
+                  Upload Article
+                </>
+              )}
+            </button>
+
+            {uploadStatus && (
+              <div 
+                className={`mt-2 p-4 rounded-md transition-opacity duration-300 ease-in-out ${
+                  uploadStatus.type === 'success' 
+                    ? 'bg-green-50 text-green-700 border border-green-200' 
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                } ${isStatusVisible ? 'opacity-100' : 'opacity-0'}`}
+              >
+                {uploadStatus.message}
+              </div>
+            )}
+
             <div className="space-y-2">
               <h3 className="font-semibold">Status</h3>
               <div className="rounded-lg border p-2">
@@ -771,39 +806,6 @@ export default function EditWebflowItemPage() {
                 <label htmlFor="should-i-be-on-the-home-page" className="ml-2 text-sm">Show on Homepage</label>
               </div>
             </div>
-
-            <button
-              type="submit"
-              disabled={isUploading}
-              className={`w-full flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md transition-colors
-                ${isUploading 
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:bg-primary/90'}`}
-            >
-              {isUploading ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Rocket className="mr-2 h-4 w-4" />
-                  Upload Article
-                </>
-              )}
-            </button>
-
-            {uploadStatus && (
-              <div 
-                className={`mt-2 p-4 rounded-md transition-opacity duration-300 ease-in-out ${
-                  uploadStatus.type === 'success' 
-                    ? 'bg-green-50 text-green-700 border border-green-200' 
-                    : 'bg-red-50 text-red-700 border border-red-200'
-                } ${isStatusVisible ? 'opacity-100' : 'opacity-0'}`}
-              >
-                {uploadStatus.message}
-              </div>
-            )}
           </div>
         </aside>
       </form>
