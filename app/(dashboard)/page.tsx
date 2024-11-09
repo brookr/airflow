@@ -1,11 +1,12 @@
-import { Button } from '@/components/ui/button';
-import { ArrowRight, CreditCard, Database } from 'lucide-react';
-import { Terminal } from './terminal';
+import { Button } from "@/components/ui/button";
+import { ArrowRight, CreditCard, Database } from "lucide-react";
+import { Terminal } from "./terminal";
 
 export default function HomePage() {
   return (
-    <main> ..
-      
+    <main>
+      {" "}
+      ..
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:grid lg:grid-cols-12 lg:gap-8">
@@ -16,13 +17,11 @@ export default function HomePage() {
               </h1>
               <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
                 Publish through WebFlow in record time with our powerful,
-                ai-powered tools. Your ideas come to life with a click of a button.
+                ai-powered tools. Your ideas come to life with a click of a
+                button.
               </p>
               <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
-                <a
-                  href="https://vercel.com/templates/next.js/next-js-saas-starter"
-                  target="_blank"
-                >
+                <a href="/pricing">
                   <Button className="bg-white hover:bg-gray-100 text-black border border-gray-200 rounded-full text-lg px-8 py-4 inline-flex items-center justify-center">
                     Author your own
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -36,7 +35,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <section className="py-16 bg-white w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:grid lg:grid-cols-3 lg:gap-8">
@@ -51,11 +49,10 @@ export default function HomePage() {
               </div>
               <div className="mt-5">
                 <h2 className="text-lg font-medium text-gray-900">
-                  Next.js and React
+                  Kick SEO Butt
                 </h2>
                 <p className="mt-2 text-base text-gray-500">
-                  Leverage the power of modern web technologies for optimal
-                  performance and developer experience.
+                  Leverage the power of customized content to rule SEO.
                 </p>
               </div>
             </div>
@@ -66,11 +63,11 @@ export default function HomePage() {
               </div>
               <div className="mt-5">
                 <h2 className="text-lg font-medium text-gray-900">
-                  Postgres and Drizzle ORM
+                  Upgrade Your Workflow
                 </h2>
                 <p className="mt-2 text-base text-gray-500">
-                  Robust database solution with an intuitive ORM for efficient
-                  data management and scalability.
+                  Connect directly to what's already in your CMS. Edit and
+                  revise until you're ready to publish.
                 </p>
               </div>
             </div>
@@ -81,18 +78,17 @@ export default function HomePage() {
               </div>
               <div className="mt-5">
                 <h2 className="text-lg font-medium text-gray-900">
-                  Stripe Integration
+                  Webflow Integration
                 </h2>
                 <p className="mt-2 text-base text-gray-500">
-                  Seamless payment processing and subscription management with
-                  industry-leading Stripe integration.
+                  Seamless publishing and article management with
+                  industry-leading Webflow integration.
                 </p>
               </div>
             </div>
           </div>
         </div>
       </section>
-
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
@@ -101,18 +97,14 @@ export default function HomePage() {
                 Ready to launch your articles?
               </h2>
               <p className="mt-3 max-w-3xl text-lg text-gray-500">
-                Our template provides everything you need to get your publishing flow up
-                and running quickly. Don't waste time on boilerplate - focus on
-                what makes your voice unique.
+                Get your publishing flow up and running quickly. Don't waste
+                time on boilerplate - focus on what makes your voice unique.
               </p>
             </div>
             <div className="mt-8 lg:mt-0 flex justify-center lg:justify-end">
-              <a
-                href="https://github.com/leerob/next-saas-starter"
-                target="_blank"
-              >
+              <a href="/pricing">
                 <Button className="bg-white hover:bg-gray-100 text-black border border-gray-200 rounded-full text-xl px-12 py-6 inline-flex items-center justify-center">
-                  View the code
+                  Publish Now
                   <ArrowRight className="ml-3 h-6 w-6" />
                 </Button>
               </a>

@@ -5,7 +5,7 @@ import { BaseAIProvider } from "@/lib/ai/providers/base-provider";
 import { AIRequestPayload, AIResponse } from "@/lib/ai/types";
 
 const RegeneratedContent = z.object({
-  replacementText: z.string()
+  replacementText: z.string(),
 });
 
 export class OpenAIProvider extends BaseAIProvider {
@@ -14,8 +14,8 @@ export class OpenAIProvider extends BaseAIProvider {
   constructor(apiKey: string, modelName: string) {
     const config = {
       modelName,
-      supportsStructuredOutput: modelName.includes('gpt-4'),
-      supportsSystemPrompt: modelName.includes('gpt-4')
+      supportsStructuredOutput: modelName.includes("gpt-4"),
+      supportsSystemPrompt: modelName.includes("gpt-4"),
     };
     super(config);
     this.client = new OpenAI({ apiKey });
@@ -28,59 +28,70 @@ export class OpenAIProvider extends BaseAIProvider {
     return this.generateBasicResponse(payload);
   }
 
-  private async generateStructuredResponse(payload: AIRequestPayload): Promise<AIResponse> {
+  private async generateStructuredResponse(
+    payload: AIRequestPayload
+  ): Promise<AIResponse> {
     const completion = await this.client.beta.chat.completions.parse({
       model: this.config.modelName,
       messages: [
         {
           role: "system",
-          content: `You are an expert content editor. Your task is to ${this.getPromptForAction(payload.action)}`
+          content: `You are an expert content editor. Your task is to ${this.getPromptForAction(
+            payload.action
+          )}`,
         },
         {
           role: "user",
-          content: this.formatPrompt(payload)
-        }
+          content: this.formatPrompt(payload),
+        },
       ],
-      response_format: zodResponseFormat(RegeneratedContent, "replacement")
+      response_format: zodResponseFormat(RegeneratedContent, "replacement"),
     });
 
-    const replacementText = completion.choices[0]?.message?.parsed?.replacementText;
+    const replacementText =
+      completion.choices[0]?.message?.parsed?.replacementText;
     if (!replacementText) {
-      throw new Error('Invalid AI response format');
+      throw new Error("Invalid AI response format");
     }
 
     return { replacementText };
   }
 
-  private async generateBasicResponse(payload: AIRequestPayload): Promise<AIResponse> {
+  private async generateBasicResponse(
+    payload: AIRequestPayload
+  ): Promise<AIResponse> {
     const completion = await this.client.chat.completions.create({
       model: this.config.modelName,
       messages: [
         {
           role: "user",
-          content: `You are an expert content editor. Your task is to ${this.getPromptForAction(payload.action)}\n\n${this.formatPrompt(payload)}`
-        }
-      ]
+          content: `You are an expert content editor. Your task is to ${this.getPromptForAction(
+            payload.action
+          )}\n\n${this.formatPrompt(payload)}`,
+        },
+      ],
     });
 
     return {
-      replacementText: completion.choices[0].message.content || ''
+      replacementText: completion.choices[0].message.content || "",
     };
   }
 
   private formatPrompt(payload: AIRequestPayload): string {
     const { action, selectedText, fullArticle, metadata } = payload;
-    const instructions = metadata.instructions ? `\n${metadata.instructions}` : `\nBe very mindful of SEO best practices.`;
-    
+    const instructions = metadata.instructions
+      ? `\n${metadata.instructions}`
+      : `\nBe very mindful of SEO best practices.`;
+
     return `
       I need you to ${action} this portion of the article. Specifically, be very mindful of SEO best practices and be sure to follow these instructions very carefully:
       ${instructions}
       
       ARTICLE METADATA:
       ${Object.entries(metadata)
-        .filter(([key]) => key !== 'instructions')
+        .filter(([key]) => key !== "instructions")
         .map(([key, value]) => `${key}: ${value}`)
-        .join('\n')}
+        .join("\n")}
       
       FULL ARTICLE:
       ${fullArticle}
