@@ -24,7 +24,7 @@ export default function WebflowCollectionPage() {
   const [items, setItems] = useState<CollectionItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<CollectionItem[]>([]);
   const [filterDraft, setFilterDraft] = useState<string>("");
-  const [sortOrder, setSortOrder] = useState<string>("asc");
+  const [sortOrder, setSortOrder] = useState<string>("desc");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 

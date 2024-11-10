@@ -19,11 +19,11 @@ interface Article {
     createdAt: string;
     updatedAt: string;
   };
-  fields: {
-    title: {
+  fields?: {
+    title?: {
       "en-US": string;
     };
-    slug: {
+    slug?: {
       "en-US": string;
     };
   };
@@ -39,10 +39,24 @@ export function ContentfulArticleList({ spaceId }: { spaceId: string }) {
       try {
         const response = await fetch(`/api/contentful/spaces/${spaceId}/articles`);
         if (!response.ok) {
-          throw new Error('Failed to fetch articles');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch articles');
         }
         const data = await response.json();
-        setArticles(data.articles || []);
+        console.log('Contentful API Response:', data); // Debug log
+        
+        if (!data.articles) {
+          throw new Error('No articles data received');
+        }
+
+        // Filter out articles without required fields
+        const validArticles = data.articles.filter((article: Article) => 
+          article.sys?.id && 
+          article.fields?.title?.["en-US"] && 
+          article.fields?.slug?.["en-US"]
+        );
+
+        setArticles(validArticles);
       } catch (error) {
         console.error("Failed to fetch articles:", error);
         setError(error instanceof Error ? error.message : 'Failed to fetch articles');
@@ -105,8 +119,8 @@ export function ContentfulArticleList({ spaceId }: { spaceId: string }) {
           <TableBody>
             {articles.map((article) => (
               <TableRow key={article.sys.id}>
-                <TableCell>{article.fields.title["en-US"]}</TableCell>
-                <TableCell>{article.fields.slug["en-US"]}</TableCell>
+                <TableCell>{article.fields?.title?.["en-US"] || "Untitled"}</TableCell>
+                <TableCell>{article.fields?.slug?.["en-US"] || "No slug"}</TableCell>
                 <TableCell>
                   {formatDistanceToNow(new Date(article.sys.updatedAt), {
                     addSuffix: true,
@@ -132,4 +146,4 @@ export function ContentfulArticleList({ spaceId }: { spaceId: string }) {
       )}
     </div>
   );
-} 
+}
