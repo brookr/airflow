@@ -5,13 +5,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { customerPortalAction } from "@/lib/payments/actions";
 import { useActionState } from "react";
-import { TeamDataWithMembers, User, WebflowConnection } from "@/lib/db/schema";
+import { TeamDataWithMembers, User, WebflowConnection, ContentfulConnection } from "@/lib/db/schema";
 import { removeTeamMember } from "@/app/(login)/actions";
 import { InviteTeamMember } from "./invite-team";
 import { useUser } from "@/lib/auth";
 import {
   addWebflowConnectionAction,
   removeWebflowConnectionAction,
+  addContentfulConnectionAction,
+  removeContentfulConnectionAction,
 } from "./actions";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
@@ -38,12 +40,24 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
   const teamId = teamData.id;
   const [connectionName, setConnectionName] = useState("");
 
+  const [contentfulConnections, setContentfulConnections] = useState<ContentfulConnection[]>([]);
+  const [contentfulName, setContentfulName] = useState("");
+  const [spaceId, setSpaceId] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+
   useEffect(() => {
     const fetchConnections = async () => {
-      const response = await fetch(`/api/webflow/connections?teamId=${teamId}`);
-      const data = await response.json();
-      console.log("data", data);
-      setConnections(data.connections);
+      const [webflowRes, contentfulRes] = await Promise.all([
+        fetch(`/api/webflow/connections?teamId=${teamId}`),
+        fetch(`/api/contentful/connections?teamId=${teamId}`)
+      ]);
+      const [webflowData, contentfulData] = await Promise.all([
+        webflowRes.json(),
+        contentfulRes.json()
+      ]);
+      
+      setConnections(webflowData.connections);
+      setContentfulConnections(contentfulData.connections);
     };
 
     fetchConnections();
@@ -75,6 +89,34 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
       setConnections(data.connections);
     }
     // Handle errors as needed
+  };
+
+  const handleAddContentfulConnection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = await addContentfulConnectionAction({
+      teamId,
+      spaceId,
+      accessToken,
+      name: contentfulName,
+    });
+    
+    if (result.success) {
+      setContentfulName("");
+      setSpaceId("");
+      setAccessToken("");
+      const response = await fetch(`/api/contentful/connections?teamId=${teamId}`);
+      const data = await response.json();
+      setContentfulConnections(data.connections);
+    }
+  };
+
+  const handleRemoveContentfulConnection = async (connectionId: number) => {
+    const result = await removeContentfulConnectionAction(connectionId);
+    if (result.success) {
+      const response = await fetch(`/api/contentful/connections?teamId=${teamId}`);
+      const data = await response.json();
+      setContentfulConnections(data.connections);
+    }
   };
 
   return (
@@ -159,6 +201,70 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
                   <span>{conn.collectionId}</span>
                   <Button
                     onClick={() => handleRemoveConnection(conn.id)}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    size="sm"
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))
+            ) : (
+              <p>No connections found</p>
+            )}
+          </ul>
+        </CardContent>
+      </Card>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Contentful Integrations</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={handleAddContentfulConnection}
+            className="mb-6 flex items-center space-x-4"
+          >
+            <Input
+              type="text"
+              value={contentfulName}
+              onChange={(e) => setContentfulName(e.target.value)}
+              placeholder="Connection Name"
+              required
+              className="flex-1"
+            />
+            <Input
+              type="text"
+              value={accessToken}
+              onChange={(e) => setAccessToken(e.target.value)}
+              placeholder="Access Token"
+              required
+              className="flex-1"
+            />            <Input
+              type="text"
+              value={spaceId}
+              onChange={(e) => setSpaceId(e.target.value)}
+              placeholder="Space ID"
+              required
+              className="flex-1"
+            />
+
+            <Button type="submit" variant="outline">
+              Add Connection
+            </Button>
+          </form>
+
+          <h3 className="text-lg font-semibold mb-2">Existing Connections</h3>
+          <ul>
+            {contentfulConnections ? (
+              contentfulConnections.map((conn) => (
+                <li
+                  key={conn.id}
+                  className="flex justify-between items-center mb-2"
+                >
+                  <span>{conn.name}</span>
+                  <span>****{conn.accessToken.slice(-4)}</span>
+                  <span>{conn.spaceId}</span>
+                  <Button
+                    onClick={() => handleRemoveContentfulConnection(conn.id)}
                     className="bg-orange-500 hover:bg-orange-600 text-white"
                     size="sm"
                   >

@@ -10,7 +10,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-export const users = pgTable("users", {
+// Table Definitions
+const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }),
   email: varchar("email", { length: 255 }).notNull().unique(),
@@ -21,7 +22,7 @@ export const users = pgTable("users", {
   deletedAt: timestamp("deleted_at"),
 });
 
-export const teams = pgTable("teams", {
+const teams = pgTable("teams", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -33,7 +34,7 @@ export const teams = pgTable("teams", {
   subscriptionStatus: varchar("subscription_status", { length: 20 }),
 });
 
-export const teamMembers = pgTable("team_members", {
+const teamMembers = pgTable("team_members", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
     .notNull()
@@ -45,7 +46,7 @@ export const teamMembers = pgTable("team_members", {
   joinedAt: timestamp("joined_at").notNull().defaultNow(),
 });
 
-export const activityLogs = pgTable("activity_logs", {
+const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
   teamId: integer("team_id")
     .notNull()
@@ -56,7 +57,7 @@ export const activityLogs = pgTable("activity_logs", {
   ipAddress: varchar("ip_address", { length: 45 }),
 });
 
-export const invitations = pgTable("invitations", {
+const invitations = pgTable("invitations", {
   id: serial("id").primaryKey(),
   teamId: integer("team_id")
     .notNull()
@@ -70,7 +71,7 @@ export const invitations = pgTable("invitations", {
   status: varchar("status", { length: 20 }).notNull().default("pending"),
 });
 
-export const webflowConnections = pgTable("webflow_connections", {
+const webflowConnections = pgTable("webflow_connections", {
   id: serial("id").primaryKey(),
   teamId: integer("team_id")
     .notNull()
@@ -82,27 +83,37 @@ export const webflowConnections = pgTable("webflow_connections", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+const contentfulConnections = pgTable('contentful_connections', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  spaceId: text('space_id').notNull(),
+  accessToken: text('access_token').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+const webflowItems = pgTable("webflow_items", {
+  _id: serial("id").primaryKey(),
+  collectionId: integer("collection_id").notNull(),
+  name: text("name").notNull(),
+  createdOn: timestamp("created_on").defaultNow(),
+  isDraft: boolean("is_draft").default(false),
+  fieldData: jsonb("field_data").notNull(),
+});
+
+// Relations
 export const teamsRelations = relations(teams, ({ many }) => ({
   teamMembers: many(teamMembers),
   activityLogs: many(activityLogs),
   invitations: many(invitations),
   webflowConnections: many(webflowConnections),
+  contentfulConnections: many(contentfulConnections),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
   teamMembers: many(teamMembers),
-  invitationsSent: many(invitations),
-}));
-
-export const invitationsRelations = relations(invitations, ({ one }) => ({
-  team: one(teams, {
-    fields: [invitations.teamId],
-    references: [teams.id],
-  }),
-  invitedBy: one(users, {
-    fields: [invitations.invitedBy],
-    references: [users.id],
-  }),
+  invitationsSent: many(invitations, { relationName: 'invitedBy' }),
 }));
 
 export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
@@ -112,6 +123,32 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
   }),
   team: one(teams, {
     fields: [teamMembers.teamId],
+    references: [teams.id],
+  }),
+}));
+
+export const invitationsRelations = relations(invitations, ({ one }) => ({
+  team: one(teams, {
+    fields: [invitations.teamId],
+    references: [teams.id],
+  }),
+  inviter: one(users, {
+    fields: [invitations.invitedBy],
+    references: [users.id],
+    relationName: 'invitedBy',
+  }),
+}));
+
+export const webflowConnectionsRelations = relations(webflowConnections, ({ one }) => ({
+  team: one(teams, {
+    fields: [webflowConnections.teamId],
+    references: [teams.id],
+  }),
+}));
+
+export const contentfulConnectionsRelations = relations(contentfulConnections, ({ one }) => ({
+  team: one(teams, {
+    fields: [contentfulConnections.teamId],
     references: [teams.id],
   }),
 }));
@@ -127,19 +164,9 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
-export const webflowConnectionsRelations = relations(
-  webflowConnections,
-  ({ one }) => ({
-    team: one(teams, {
-      fields: [webflowConnections.teamId],
-      references: [teams.id],
-    }),
-  })
-);
-
-export type User = typeof users.$inferSelect & { teamId: number };
-
-export type NewUser = {
+// Types
+type User = typeof users.$inferSelect & { teamId: number };
+type NewUser = {
   id?: number;
   teamId?: number;
   email: string;
@@ -147,24 +174,28 @@ export type NewUser = {
   role: string;
 };
 
-export type Team = typeof teams.$inferSelect;
-export type NewTeam = typeof teams.$inferInsert;
-export type TeamMember = typeof teamMembers.$inferSelect;
-export type NewTeamMember = typeof teamMembers.$inferInsert;
-export type ActivityLog = typeof activityLogs.$inferSelect;
-export type NewActivityLog = typeof activityLogs.$inferInsert;
-export type Invitation = typeof invitations.$inferSelect;
-export type NewInvitation = typeof invitations.$inferInsert;
-export type WebflowConnection = typeof webflowConnections.$inferSelect;
-export type NewWebflowConnection = typeof webflowConnections.$inferInsert;
-export type TeamDataWithMembers = Team & {
+type Team = typeof teams.$inferSelect;
+type NewTeam = typeof teams.$inferInsert;
+type TeamMember = typeof teamMembers.$inferSelect;
+type NewTeamMember = typeof teamMembers.$inferInsert;
+type ActivityLog = typeof activityLogs.$inferSelect;
+type NewActivityLog = typeof activityLogs.$inferInsert;
+type Invitation = typeof invitations.$inferSelect;
+type NewInvitation = typeof invitations.$inferInsert;
+type WebflowConnection = typeof webflowConnections.$inferSelect;
+type NewWebflowConnection = typeof webflowConnections.$inferInsert;
+type ContentfulConnection = typeof contentfulConnections.$inferSelect;
+type NewContentfulConnection = typeof contentfulConnections.$inferInsert;
+
+type TeamDataWithMembers = Team & {
   teamMembers: (TeamMember & {
     user: Pick<User, "id" | "name" | "email">;
   })[];
   webflowConnections: WebflowConnection[];
+  contentfulConnections: ContentfulConnection[];
 };
 
-export enum ActivityType {
+enum ActivityType {
   SIGN_UP = "SIGN_UP",
   SIGN_IN = "SIGN_IN",
   SIGN_OUT = "SIGN_OUT",
@@ -179,11 +210,30 @@ export enum ActivityType {
   REMOVE_WEBFLOW_CONNECTION = "REMOVE_WEBFLOW_CONNECTION",
 }
 
-export const webflowItems = pgTable("webflow_items", {
-  _id: serial("id").primaryKey(),
-  collectionId: integer("collection_id").notNull(),
-  name: text("name").notNull(),
-  createdOn: timestamp("created_on").defaultNow(),
-  isDraft: boolean("is_draft").default(false),
-  fieldData: jsonb("field_data").notNull(),
-});
+// Single export statement for all schema elements
+export {
+  users,
+  teams,
+  teamMembers,
+  activityLogs,
+  invitations,
+  webflowConnections,
+  contentfulConnections,
+  webflowItems,
+  type User,
+  type NewUser,
+  type Team,
+  type NewTeam,
+  type TeamMember,
+  type NewTeamMember,
+  type ActivityLog,
+  type NewActivityLog,
+  type Invitation,
+  type NewInvitation,
+  type WebflowConnection,
+  type NewWebflowConnection,
+  type ContentfulConnection,
+  type NewContentfulConnection,
+  type TeamDataWithMembers,
+  ActivityType,
+};

@@ -8,6 +8,7 @@ import {
   webflowConnections,
   User,
   webflowItems,
+  contentfulConnections,
 } from "./schema";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth/session";
@@ -262,3 +263,30 @@ export async function updateWebflowItem(collectionId: string, itemId: string, da
 
   return await response.json();
 }
+
+export const getContentfulConnectionsByTeam = (teamId: number) => {
+  return db
+    .select()
+    .from(contentfulConnections)
+    .where(eq(contentfulConnections.teamId, teamId));
+};
+
+export const addContentfulConnection = (
+  teamId: number,
+  spaceId: string,
+  accessToken: string,
+  name: string
+) => {
+  return db.insert(contentfulConnections).values({
+    teamId,
+    spaceId,
+    accessToken,
+    name,
+  });
+};
+
+export const removeContentfulConnection = (connectionId: number) => {
+  return db
+    .delete(contentfulConnections)
+    .where(eq(contentfulConnections.id, connectionId));
+};
