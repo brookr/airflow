@@ -4,8 +4,9 @@ import { getUser } from "@/lib/db/queries";
 
 export async function GET(
   request: Request,
-  { params }: { params: { spaceId: string } }
+  props: { params: Promise<{ spaceId: string }> }
 ) {
+  const params = await props.params;
   try {
     const user = await getUser();
     if (!user?.teamId) {
@@ -27,7 +28,7 @@ export async function GET(
       {
         headers: {
           Authorization: `Bearer ${connection.accessToken}`,
-          'Content-Type': 'application/vnd.contentful.management.v1+json'
+          "Content-Type": "application/vnd.contentful.management.v1+json",
         },
       }
     );
@@ -37,10 +38,11 @@ export async function GET(
     }
 
     const data = await response.json();
-    const articleContentType = data.items.find((ct: any) => 
-      ct.name.toLowerCase() === 'article' || 
-      ct.name.toLowerCase() === 'post' || 
-      ct.name.toLowerCase() === 'blog post'
+    const articleContentType = data.items.find(
+      (ct: any) =>
+        ct.name.toLowerCase() === "article" ||
+        ct.name.toLowerCase() === "post" ||
+        ct.name.toLowerCase() === "blog post"
     );
 
     if (!articleContentType) {
@@ -49,10 +51,15 @@ export async function GET(
 
     return NextResponse.json({ contentType: articleContentType });
   } catch (error) {
-    console.error('Contentful API error:', error);
+    console.error("Contentful API error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch content type" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch content type",
+      },
       { status: 500 }
     );
   }
-} 
+}
