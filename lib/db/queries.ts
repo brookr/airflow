@@ -126,6 +126,7 @@ export async function getTeamForUser(userId: number) {
           team: {
             with: {
               webflowConnections: true,
+              contentfulConnections: true,
               teamMembers: {
                 with: {
                   user: {

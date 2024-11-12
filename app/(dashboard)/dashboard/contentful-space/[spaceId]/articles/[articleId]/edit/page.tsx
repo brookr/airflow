@@ -16,24 +16,8 @@ interface ArticleData {
     version: number;
   };
   fields: {
-    title: {
-      "en-US": string;
-    };
-    slug: {
-      "en-US": string;
-    };
-    content: {
-      "en-US": {
-        nodeType: string;
-        content: Array<{
-          nodeType: string;
-          content: Array<{
-            nodeType: string;
-            value: string;
-            marks?: Array<{ type: string }>;
-          }>;
-        }>;
-      };
+    [key: string]: {
+      "en-US": any;
     };
   };
 }
@@ -45,6 +29,7 @@ interface ContentTypeField {
   required: boolean;
   localized: boolean;
   validations?: any[];
+  linkType?: string;
 }
 
 interface ContentType {

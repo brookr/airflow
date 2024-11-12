@@ -6,17 +6,9 @@ interface AIFieldGeneratorProps {
   fieldName: string;
   currentValue: string;
   onGenerate: (value: string) => void;
-  context: {
-    content: string;
-    title?: string;
-    subtitle?: string;
-    metaTitle?: string;
-    metaDescription?: string;
-    slug?: string;
-    category?: string;
-    tags?: string;
-  };
+  context: Record<string, any>;
   customInstructions?: string;
+  model?: string;
 }
 
 export function AIFieldGenerator({ fieldName, currentValue, onGenerate, context, customInstructions }: AIFieldGeneratorProps) {
