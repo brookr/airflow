@@ -296,8 +296,11 @@ export default function EditArticlePage() {
               {
                 nodeType: "text",
                 value: textContent,
+                data: {},
+                marks: [],
               },
             ],
+            data: {},
           };
         case "h1":
           return {
@@ -306,8 +309,11 @@ export default function EditArticlePage() {
               {
                 nodeType: "text",
                 value: textContent,
+                data: {},
+                marks: [],
               },
             ],
+            data: {},
           };
         case "h2":
           return {
@@ -316,8 +322,11 @@ export default function EditArticlePage() {
               {
                 nodeType: "text",
                 value: textContent,
+                data: {},
+                marks: [],
               },
             ],
+            data: {},
           };
         case "h3":
           return {
@@ -326,8 +335,11 @@ export default function EditArticlePage() {
               {
                 nodeType: "text",
                 value: textContent,
+                data: {},
+                marks: [],
               },
             ],
+            data: {},
           };
         case "ul":
           return {
@@ -338,8 +350,11 @@ export default function EditArticlePage() {
                 {
                   nodeType: "text",
                   value: li.textContent || "",
+                  data: {},
+                  marks: [],
                 },
               ],
+              data: {},
             })),
           };
         case "ol":
@@ -351,8 +366,11 @@ export default function EditArticlePage() {
                 {
                   nodeType: "text",
                   value: li.textContent || "",
+                  data: {},
+                  marks: [],
                 },
               ],
+              data: {},
             })),
           };
         default:
@@ -372,6 +390,7 @@ export default function EditArticlePage() {
 
     return {
       nodeType: "document",
+      data: {},
       content,
     };
   };
@@ -379,7 +398,6 @@ export default function EditArticlePage() {
   const renderField = (field: ContentTypeField) => {
     const value =
       pendingChanges[field.id] ?? article?.fields[field.id]?.["en-US"] ?? "";
-    console.log("field:", field);
     switch (field.type) {
       case "Symbol":
       case "Text":
@@ -425,7 +443,6 @@ export default function EditArticlePage() {
           field.linkType === "Asset"
         ) {
           // Handle media/image field
-          console.log("asset:", value);
           const assetData = value?.fields?.file ?? value;
           const assetUrl = assetData?.url;
           const assetType = assetData?.contentType;
@@ -533,7 +550,7 @@ export default function EditArticlePage() {
             label={field.name}
             name={field.id}
             value={JSON.stringify(value, null, 2)}
-            onChange={(value) => {
+            onChange={(value) => { 
               try {
                 handleFieldUpdate(field.id, JSON.parse(value));
               } catch (e) {

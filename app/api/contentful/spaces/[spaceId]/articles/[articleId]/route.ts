@@ -132,7 +132,6 @@ export async function PUT(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Full error details:", error);
     return NextResponse.json(
       {
         error:
