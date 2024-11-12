@@ -6,23 +6,16 @@ interface AIFieldGeneratorProps {
   fieldName: string;
   currentValue: string;
   onGenerate: (value: string) => void;
-  context: {
-    content: string;
-    title?: string;
-    subtitle?: string;
-    metaTitle?: string;
-    metaDescription?: string;
-    slug?: string;
-    category?: string;
-    tags?: string;
-  };
+  context: Record<string, any>;
   customInstructions?: string;
+  model?: string;
 }
 
 export function AIFieldGenerator({ fieldName, currentValue, onGenerate, context, customInstructions }: AIFieldGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
+    console.log('Generating field:', fieldName);
     if (fieldName === 'content') {
       if (!window.confirm('Are you sure you want to regenerate the entire content? This will overwrite your existing content.')) {
         return;
