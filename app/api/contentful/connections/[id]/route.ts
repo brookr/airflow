@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { removeContentfulConnection } from "@/lib/db/queries";
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const connectionId = parseInt(params.id);
     await removeContentfulConnection(connectionId);
@@ -13,4 +15,4 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       { status: 500 }
     );
   }
-} 
+}

@@ -233,20 +233,20 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
             />
             <Input
               type="text"
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
-              placeholder="Access Token"
-              required
-              className="flex-1"
-            />            <Input
-              type="text"
               value={spaceId}
               onChange={(e) => setSpaceId(e.target.value)}
               placeholder="Space ID"
               required
               className="flex-1"
             />
-
+            <Input
+              type="text"
+              value={accessToken}
+              onChange={(e) => setAccessToken(e.target.value)}
+              placeholder="Access Token"
+              required
+              className="flex-1"
+            />
             <Button type="submit" variant="outline">
               Add Connection
             </Button>

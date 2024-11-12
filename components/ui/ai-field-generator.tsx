@@ -23,6 +23,7 @@ export function AIFieldGenerator({ fieldName, currentValue, onGenerate, context,
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
+    console.log('Generating field:', fieldName);
     if (fieldName === 'content') {
       if (!window.confirm('Are you sure you want to regenerate the entire content? This will overwrite your existing content.')) {
         return;

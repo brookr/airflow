@@ -85,13 +85,25 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ spaceId: 
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to update article');
+      console.error('Contentful API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: JSON.stringify(error, null, 2),
+        details: error.details?.errors,
+        validationErrors: error.details?.errors?.map((e: any) => ({
+          field: e.path?.join('.'),
+          details: e.details,
+          name: e.name
+        })),
+        requestData: JSON.stringify(articleData, null, 2)
+      });
+      throw new Error(`Contentful validation error: ${JSON.stringify(error.details?.errors, null, 2)}`);
     }
 
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Contentful API error:', error);
+    console.error('Full error details:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update article" },
       { status: 500 }

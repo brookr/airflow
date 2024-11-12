@@ -225,7 +225,8 @@ export function ContentfulArticleForm({
                   'insertdatetime', 'media', 'table', 'help', 'wordcount', 'autoresize'
                 ],
                 toolbar: [
-                  'undo redo | h1 h2 h3 | bullist numlist outdent indent | removeformat | help'
+                  'undo redo | h1 h2 h3 | bullist numlist outdent indent |',
+                  'removeformat | help'
                 ],
                 branding: false,
                 resize: true,

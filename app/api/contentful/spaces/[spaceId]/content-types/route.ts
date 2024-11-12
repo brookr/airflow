@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { getContentfulConnectionsByTeam } from "@/lib/db/queries";
 import { getUser } from "@/lib/db/queries";
 
-export async function GET(request: Request, props: { params: Promise<{ spaceId: string }> }) {
-  const params = await props.params;
+export async function GET(
+  request: Request,
+  { params }: { params: { spaceId: string } }
+) {
   try {
     const user = await getUser();
     if (!user?.teamId) {

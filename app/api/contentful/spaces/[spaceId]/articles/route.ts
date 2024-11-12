@@ -92,7 +92,7 @@ export async function POST(request: Request, props: { params: Promise<{ spaceId:
       );
     }
 
-    // First, get the content type ID for 'article'
+    // First, get the content type ID and fields for 'article'
     const contentTypesResponse = await fetch(
       `https://api.contentful.com/spaces/${params.spaceId}/environments/master/content_types`,
       {
@@ -118,8 +118,87 @@ export async function POST(request: Request, props: { params: Promise<{ spaceId:
       throw new Error('Article content type not found in space');
     }
 
-    const articleData = await request.json();
+    // Create new article with all required fields
+    const newArticleData = {
+      fields: articleContentType.fields.reduce((acc: any, field: any) => {
+        if (field.required) {
+          switch (field.type) {
+            case 'Symbol':
+              acc[field.id] = { "en-US": field.id === 'title' ? "New Article" : `New ${field.name}` };
+              break;
+            case 'Text':
+              acc[field.id] = { "en-US": `Enter ${field.name}` };
+              break;
+            case 'RichText':
+              acc[field.id] = {
+                "en-US": {
+                  nodeType: "document",
+                  data: {},
+                  content: [
+                    {
+                      nodeType: "paragraph",
+                      data: {},
+                      content: [
+                        {
+                          nodeType: "text",
+                          value: `Enter ${field.name}`,
+                          marks: [],
+                          data: {}
+                        }
+                      ]
+                    }
+                  ]
+                }
+              };
+              break;
+            case 'Date':
+              acc[field.id] = { "en-US": new Date().toISOString() };
+              break;
+            case 'Boolean':
+              acc[field.id] = { "en-US": false };
+              break;
+            case 'Integer':
+            case 'Number':
+              acc[field.id] = { "en-US": 0 };
+              break;
+            case 'Array':
+              acc[field.id] = { "en-US": [] };
+              break;
+            case 'Object':
+              acc[field.id] = { "en-US": {} };
+              break;
+            case 'Link':
+              if (field.linkType === 'Asset') {
+                acc[field.id] = { 
+                  "en-US": {
+                    sys: {
+                      type: "Link",
+                      linkType: "Asset",
+                      id: "" // Will need to be updated with a real asset ID
+                    }
+                  }
+                };
+              } else {
+                acc[field.id] = { 
+                  "en-US": {
+                    sys: {
+                      type: "Link",
+                      linkType: "Entry",
+                      id: "" // Will need to be updated with a real entry ID
+                    }
+                  }
+                };
+              }
+              break;
+            default:
+              acc[field.id] = { "en-US": "" };
+          }
+        }
+        return acc;
+      }, {})
+    };
 
+    // Create the article (but don't publish it)
     const response = await fetch(
       `https://api.contentful.com/spaces/${params.spaceId}/environments/master/entries`,
       {
@@ -129,19 +208,34 @@ export async function POST(request: Request, props: { params: Promise<{ spaceId:
           'Content-Type': 'application/vnd.contentful.management.v1+json',
           'X-Contentful-Content-Type': articleContentType.sys.id
         },
-        body: JSON.stringify(articleData)
+        body: JSON.stringify(newArticleData)
       }
     );
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(`Failed to create article: ${error.message}`);
+      console.error('Contentful API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: JSON.stringify(error, null, 2),
+        details: error.details?.errors,
+        validationErrors: error.details?.errors?.map((e: any) => ({
+          field: e.path?.join('.'),
+          details: e.details,
+          name: e.name
+        })),
+        requestData: JSON.stringify(newArticleData, null, 2),
+        contentType: JSON.stringify(articleContentType, null, 2)
+      });
+      throw new Error(`Contentful validation error: ${JSON.stringify(error.details?.errors, null, 2)}`);
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const newArticle = await response.json();
+
+    // Return the unpublished article
+    return NextResponse.json(newArticle);
   } catch (error) {
-    console.error('Contentful API error:', error);
+    console.error('Full error details:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to create article" },
       { status: 500 }
